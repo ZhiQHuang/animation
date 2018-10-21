@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd 
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd 
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd 
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd ">
+	<!-- 扫描哪个包下（包含子包）的类包含bean的注解 -->
+	<context:component-scan base-package="cn.edu.hbpu.animation"></context:component-scan>
+	<!-- 开启注解，完成AOP配置 -->
+	<!-- <aop:aspectj-autoproxy></aop:aspectj-autoproxy> -->
+	<!--读取连接数据库的属性信息文件db.properties  -->
+
+
+	<context:property-placeholder location="classpath:db.properties" />
+	<!-- 使用C3p0连接池 建立数据库的连接DataSource -->
+	<bean name="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driverClassName}"></property>
+		<property name="user" value="${jdbc.username}"></property>
+		<property name="password" value=""></property>
+		<property name="jdbcUrl" value="${jdbc.url}"></property>
+	</bean>
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="classpath:SqlMapConfig.xml"></property>
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="cn.edu.hbpu.animation.mapper"></property>
+	</bean>
+
+
+
+	<!-- 使用C3p0的DataSource建立JdbcTemplate -->
+	<bean name="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<bean name="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<!-- 配置通知 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="insert*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="persist*" propagation="REQUIRED"
+				isolation="REPEATABLE_READ" read-only="false" />
+			<tx:method name="update*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="modify*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="delete*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="remove*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="get*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+			<tx:method name="find*" propagation="REQUIRED" isolation="REPEATABLE_READ"
+				read-only="false" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 配置切面 -->
+	<aop:config>
+		<!-- 配置切点 -->
+		<aop:pointcut
+			expression="execution(* cn.edu.hbpu.animation.service.impl.*ServiceImpl.*(..))"
+			id="pc" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pc" />
+	</aop:config>
+
+</beans>
